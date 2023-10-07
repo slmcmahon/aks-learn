@@ -96,7 +96,7 @@ kubectl apply -f mongo-express.yaml
 
 
 # give the system a few seconds to create the service.
-sleep 10
+sleep 15
 
 # Get the external IP address
 extip=$(kubectl get service mongo-express-service | awk 'FNR==2{print $4}')
