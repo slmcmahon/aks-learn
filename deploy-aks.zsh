@@ -43,7 +43,6 @@ az network vnet peering create -n $AKSTOAPPGWPEER -g $nodeResourceGroup --vnet-n
 echo "Generate a script that can be run to cleanup the resources and make it executable"
 cat << EOF > undeploy-aks.zsh
 az group delete --name $RG_NAME --yes
-az group delete --name $nodeResourceGroup --yes
 EOF
 chmod +x undeploy-aks.zsh
 
