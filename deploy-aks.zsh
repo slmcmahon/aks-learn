@@ -90,3 +90,12 @@ kubectl apply -f mongo-secret.yaml
 kubectl apply -f mongodb-configmap.yaml
 kubectl apply -f mongo.yaml
 kubectl apply -f mongo-express.yaml
+
+# Get the external IP address
+extip=$(kubectl get service mongo-express-service | awk 'FNR==2{print $4}')
+
+# Open the Mongo Express UI in the browser
+open "http://$extip:8081"
+
+# Let the user know what the username and password are
+echo "use admin / pass to login"
