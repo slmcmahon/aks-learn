@@ -17,6 +17,10 @@ spec:
       containers: 
       - name : mongodb
         image: mongo
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "300m"
         ports:
         - containerPort: 27017
         env:
