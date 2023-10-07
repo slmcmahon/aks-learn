@@ -26,16 +26,20 @@ az aks create -n $CLUSTER_NAME \
               --enable-managed-identity \
               --generate-ssh-keys
 
-echo "Create the application gateway and enable the ingress-appgw addon"
+echo "Create the public IP"
 az network public-ip create -n $PUBLIC_IP_NAME \
                             -g $RG_NAME \
                             --allocation-method Static \
                             --sku Standard
+
+echo "Create the VNet"
 az network vnet create -n $VNET_NAME \
                        -g $RG_NAME \
                        --address-prefix 10.0.0.0/16 \
                        --subnet-name $SUBNET_NAME \
                        --subnet-prefix 10.0.0.0/24 
+
+# Create the application gateway
 az network application-gateway create -n $APP_GATEWAY_NAME \
                                       -g $RG_NAME \
                                       --sku Standard_v2 \
@@ -52,7 +56,6 @@ az aks enable-addons -n $CLUSTER_NAME \
                      -a ingress-appgw \
                      --appgw-id $appgwId
 
-echo "Create the peering between the AKS VNet and the App Gateway VNet"
 nodeResourceGroup=$(az aks show -n $CLUSTER_NAME -g $RG_NAME -o tsv --query "nodeResourceGroup")
 echo "nodeResourceGroup: $nodeResourceGroup"
 
@@ -90,6 +93,10 @@ kubectl apply -f mongo-secret.yaml
 kubectl apply -f mongodb-configmap.yaml
 kubectl apply -f mongo.yaml
 kubectl apply -f mongo-express.yaml
+
+
+# give the system a few seconds to create the service.
+sleep 10
 
 # Get the external IP address
 extip=$(kubectl get service mongo-express-service | awk 'FNR==2{print $4}')
