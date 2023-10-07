@@ -1,5 +1,8 @@
 #!/bin/zsh
 
+# This script will deploy an AKS cluster with an application gateway and deploy a MongoDB and Mongo Express instance to the cluster
+# based on directions found here: https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
+
 # Generate a random string to make sure the names are unique
 RND=$(openssl rand -base64 4 | tr -dc 'a-zA-Z0-9' | head -c 4)
 
@@ -17,28 +20,61 @@ AKSTOAPPGWPEER="AKStoAppGWVnetPeering$RND"
 
 echo "Create the resource group and AKS cluster"
 az group create --name $RG_NAME --location $LOCATION
-az aks create -n $CLUSTER_NAME -g $RG_NAME --network-plugin azure --enable-managed-identity --generate-ssh-keys
+az aks create -n $CLUSTER_NAME \
+              -g $RG_NAME \
+              --network-plugin azure \
+              --enable-managed-identity \
+              --generate-ssh-keys
 
 echo "Create the application gateway and enable the ingress-appgw addon"
-az network public-ip create -n $PUBLIC_IP_NAME -g $RG_NAME --allocation-method Static --sku Standard
-az network vnet create -n $VNET_NAME -g $RG_NAME --address-prefix 10.0.0.0/16 --subnet-name $SUBNET_NAME --subnet-prefix 10.0.0.0/24 
-az network application-gateway create -n $APP_GATEWAY_NAME -g $RG_NAME --sku Standard_v2 --public-ip-address $PUBLIC_IP_NAME --vnet-name $VNET_NAME --subnet $SUBNET_NAME --priority 100
+az network public-ip create -n $PUBLIC_IP_NAME \
+                            -g $RG_NAME \
+                            --allocation-method Static \
+                            --sku Standard
+az network vnet create -n $VNET_NAME \
+                       -g $RG_NAME \
+                       --address-prefix 10.0.0.0/16 \
+                       --subnet-name $SUBNET_NAME \
+                       --subnet-prefix 10.0.0.0/24 
+az network application-gateway create -n $APP_GATEWAY_NAME \
+                                      -g $RG_NAME \
+                                      --sku Standard_v2 \
+                                      --public-ip-address $PUBLIC_IP_NAME \
+                                      --vnet-name $VNET_NAME \
+                                      --subnet $SUBNET_NAME \
+                                      --priority 100
 
 echo "Enable the ingress-appgw addon"
 appgwId=$(az network application-gateway show -n $APP_GATEWAY_NAME -g $RG_NAME -o tsv --query "id") 
-az aks enable-addons -n $CLUSTER_NAME -g $RG_NAME -a ingress-appgw --appgw-id $appgwId
+echo "appgwId: $appgwId"
+az aks enable-addons -n $CLUSTER_NAME \
+                     -g $RG_NAME \
+                     -a ingress-appgw \
+                     --appgw-id $appgwId
 
 echo "Create the peering between the AKS VNet and the App Gateway VNet"
 nodeResourceGroup=$(az aks show -n $CLUSTER_NAME -g $RG_NAME -o tsv --query "nodeResourceGroup")
+echo "nodeResourceGroup: $nodeResourceGroup"
+
 aksVnetName=$(az network vnet list -g $nodeResourceGroup -o tsv --query "[0].name")
+echo "aksVnetName: $aksVnetName"
 
 echo "Create the peering between the App Gateway VNet and the AKS VNet"
 aksVnetId=$(az network vnet show -n $aksVnetName -g $nodeResourceGroup -o tsv --query "id")
-az network vnet peering create -n $APPGATEWAYTOAKSPEER -g $RG_NAME --vnet-name $VNET_NAME --remote-vnet $aksVnetId --allow-vnet-access
+echo "aksVnetId: $aksVnetId"
+az network vnet peering create -n $APPGATEWAYTOAKSPEER \
+                               -g $RG_NAME \
+                               --vnet-name $VNET_NAME \
+                               --remote-vnet $aksVnetId \
+                               --allow-vnet-access
 
 echo "Create the peering between the App Gateway VNet and the AKS VNet"
 appGWVnetId=$(az network vnet show -n $VNET_NAME -g $RG_NAME -o tsv --query "id")
-az network vnet peering create -n $AKSTOAPPGWPEER -g $nodeResourceGroup --vnet-name $aksVnetName --remote-vnet $appGWVnetId --allow-vnet-access
+az network vnet peering create -n $AKSTOAPPGWPEER \
+                               -g $nodeResourceGroup \
+                               --vnet-name $aksVnetName \
+                               --remote-vnet $appGWVnetId \
+                               --allow-vnet-access
 
 echo "Generate a script that can be run to cleanup the resources and make it executable"
 cat << EOF > undeploy-aks.zsh
