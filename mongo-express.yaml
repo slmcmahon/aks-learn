@@ -22,7 +22,7 @@ spec:
               memory: "128Mi"
               cpu: "300m"
           ports:
-            - containerPort: 8081
+            - containerPort: 8090
           env:
           - name: ME_CONFIG_MONGODB_ADMINUSERNAME
             valueFrom:
@@ -52,6 +52,7 @@ spec:
   type: LoadBalancer
   ports:
     - protocol: TCP
-      port: 8081
-      targetPort: 8081
+      port: 8090
+      targetPort: 8090
       nodePort: 30000
+

@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: exporter
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          imagePullSecrets:
+          - name: acr-pull-secret
+          containers:
+          - name: exporter
+            image: slmcmahonacr.azurecr.io/exporter:latest
+            env:
+              - name: AZDO_PAT
+                value: n6z7vlysbbbrxmrcepddr26ssy6gsft5a7q4cbls33sxcxxfiyfa
+            imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure
