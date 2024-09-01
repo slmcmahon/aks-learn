@@ -1,7 +1,8 @@
 #!/bin/zsh
 
-# This script will deploy an AKS cluster with an application gateway and deploy a MongoDB and Mongo Express instance to the cluster
-# based on directions found here: https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
+# This script will deploy an AKS cluster with an application gateway and deploy a MongoDB and Mongo 
+# Express instance to the cluster based on directions found here: 
+# https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-ingress-controller-add-on-new
 
 # Generate a random string to make sure the names are unique
 RND=$(openssl rand -base64 4 | tr -dc 'a-zA-Z0-9' | head -c 4)
@@ -79,7 +80,7 @@ az network vnet peering create -n $AKSTOAPPGWPEER \
                                --remote-vnet $appGWVnetId \
                                --allow-vnet-access
 
-echo "Generate a script that can be run to cleanup the resources and make it executable"
+echo "Generate an executable script that can be run to cleanup the resources"
 cat << EOF > undeploy-aks.zsh
 az group delete --name $RG_NAME --yes
 EOF
